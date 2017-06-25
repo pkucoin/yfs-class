@@ -32,7 +32,7 @@ lock_server::acquire(int clt, lock_protocol::lockid_t lid, int &r)
     else
     {
         while (used_locks.find(lid) != used_locks.end() \
-                && used_locks[lid].state != lock_state::FREE)
+            && used_locks[lid].state != lock_state::FREE)
         {
             used_locks[lid].cv.wait(ulock);
         }
