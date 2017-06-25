@@ -5,19 +5,31 @@
 #define lock_server_h
 
 #include <string>
+#include <unordered_set>
 #include "lock_protocol.h"
 #include "lock_client.h"
 #include "rpc.h"
+struct lock_state {
+    enum STATE {
+        FREE = 0,
+        BUSY,
+    } state;
+    std::condition_variable cv;
+};
 
 class lock_server {
 
  protected:
   int nacquire;
+  std::unordered_map<lock_protocol::lockid_t, lock_state> used_locks; 
+  std::mutex server_mtx;
 
  public:
   lock_server();
   ~lock_server() {};
   lock_protocol::status stat(int clt, lock_protocol::lockid_t lid, int &);
+  lock_protocol::status acquire(int clt, lock_protocol::lockid_t lid, int &);
+  lock_protocol::status release(int clt, lock_protocol::lockid_t lid, int &);
 };
 
 #endif 
