@@ -677,6 +677,17 @@ rpcs::add_reply(unsigned int clt_nonce, unsigned int xid,
 {
 	ScopedLock rwl(&reply_window_m_);
         // You fill this in for Lab 1.
+	auto reply_list = reply_window_[clt_nonce];
+	for (auto itr = reply_list.begin(); itr != reply_list.end(); ++itr)
+	{
+		if (itr->xid == xid)
+		{
+			itr->buf = b;
+			itr->sz = sz;
+			itr->cb_present = true;
+			break;
+		}
+	}
 }
 
 void
