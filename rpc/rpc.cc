@@ -556,6 +556,7 @@ rpcs::dispatch(djob_t *j)
 			// if we don't know about this clt_nonce, create a cleanup object
 			if(reply_window_.find(h.clt_nonce) == reply_window_.end()){
 				VERIFY (reply_window_[h.clt_nonce].size() == 0); // create
+                reply_window_[h.clt_nonce].push_back(reply_t(0));
 				jsl_log(JSL_DBG_2,
 						"rpcs::dispatch: new client %u xid %d chan %d, total clients %d\n", 
 						h.clt_nonce, h.xid, c->channo(), (int)reply_window_.size());
@@ -663,7 +664,77 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 	ScopedLock rwl(&reply_window_m_);
 
         // You fill this in for Lab 1.
+		/*
+	VERIFY(xid > xid_rep);
+	auto reply_list = reply_window_[clt_nonce];
+	std::cout << "clt_nonce " << clt_nonce << ": rpc xid:" << xid << ", xid_rep:" << xid_rep << std::endl;
+	std::cout << "size: " << reply_list.size() << std::endl;
+	for (auto itr = reply_list.begin(); itr != reply_list.end(); ++itr)
+	{
+		std::cout << "xid: " << itr->xid << ", cb_present: " << itr->cb_present << std::endl;
+	}
+
+	auto itr = reply_list.begin();
+	if (!reply_list.empty())
+	{
+		while (itr->xid < xid_rep)
+		{
+			if (itr->buf)
+			{
+				free(itr->buf);
+			}
+			itr = reply_list.erase(itr);
+		}
+		if (!reply_list.empty())
+		{
+			if (itr->xid > xid)
+			{
+				return FORGOTTEN;
+			}
+			for ( ; itr != reply_list.end(); ++itr)
+			{
+				if (itr->xid == xid)
+				{
+					if (itr->cb_present)
+					{
+						*b = itr->buf;
+						*sz = itr->sz;
+	std::cout << "LEAVE rpc xid:" << xid << ", xid_rep:" << xid_rep << std::endl;
+	std::cout << "size: " << reply_list.size() << std::endl;
+	for (auto itr = reply_list.begin(); itr != reply_list.end(); ++itr)
+	{
+		std::cout << "xid: " << itr->xid << ", cb_present: " << itr->cb_present << std::endl;
+	}
+						return DONE;
+					}
+					else
+					{
+	std::cout << "LEAVE rpc xid:" << xid << ", xid_rep:" << xid_rep << std::endl;
+	std::cout << "size: " << reply_list.size() << std::endl;
+	for (auto itr = reply_list.begin(); itr != reply_list.end(); ++itr)
+	{
+		std::cout << "xid: " << itr->xid << ", cb_present: " << itr->cb_present << std::endl;
+	}
+						return INPROGRESS;
+					}
+				}
+				else if (itr->xid > xid)
+				{
+					break;
+				}
+			}
+		}
+	}
+	reply_list.insert(itr, reply_t(xid));
+	
+	std::cout << "LEAVE rpc xid:" << xid << ", xid_rep:" << xid_rep << std::endl;
+	std::cout << "size: " << reply_list.size() << std::endl;
+	for (auto itr = reply_list.begin(); itr != reply_list.end(); ++itr)
+	{
+		std::cout << "xid: " << itr->xid << ", cb_present: " << itr->cb_present << std::endl;
+	}
 	return NEW;
+	*/
 }
 
 // rpcs::dispatch calls add_reply when it is sending a reply to an RPC,

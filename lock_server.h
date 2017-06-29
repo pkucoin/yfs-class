@@ -23,6 +23,7 @@ class lock_server {
   int nacquire;
   std::unordered_map<lock_protocol::lockid_t, lock_state> used_locks; 
   std::mutex server_mtx;
+    std::condition_variable cv;
 
  public:
   lock_server();

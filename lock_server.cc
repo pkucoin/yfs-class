@@ -34,7 +34,8 @@ lock_server::acquire(int clt, lock_protocol::lockid_t lid, int &r)
         while (used_locks.find(lid) != used_locks.end() \
             && used_locks[lid].state != lock_state::FREE)
         {
-            used_locks[lid].cv.wait(ulock);
+			cv.wait(ulock);
+            //used_locks[lid].cv.wait(ulock);
         }
         used_locks[lid].state = lock_state::BUSY;
     }
@@ -49,7 +50,8 @@ lock_server::release(int clt, lock_protocol::lockid_t lid, int &r)
         && used_locks[lid].state != lock_state::FREE)
     {
         used_locks[lid].state = lock_state::FREE;
-        used_locks[lid].cv.notify_all();
+        //used_locks[lid].cv.notify_all();
+		cv.notify_all();
     }
     return lock_protocol::OK;
 }
