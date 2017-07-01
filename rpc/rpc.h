@@ -5,7 +5,11 @@
 #include <netinet/in.h>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <stdio.h>
+#include <unistd.h>
+#include <mutex>
+#include <condition_variable>
 
 #include "thr_pool.h"
 #include "marshall.h"

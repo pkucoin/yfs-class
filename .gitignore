@@ -1,0 +1,9 @@
+*.[oad]
+lock_demo
+lock_server
+lock_tester
+rpctest
+tags
+cscope.out
+cscope.po.out
+cscope.in.out
