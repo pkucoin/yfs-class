@@ -7,3 +7,12 @@ tags
 cscope.out
 cscope.po.out
 cscope.in.out
+extent_server
+yfs_client
+debug.txt
+extent_server.log
+lock_server.log
+yfs1/
+yfs2/
+yfs_client1.log
+yfs_client2.log
