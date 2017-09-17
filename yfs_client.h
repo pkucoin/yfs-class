@@ -5,7 +5,6 @@
 //#include "yfs_protocol.h"
 #include "extent_client.h"
 #include <vector>
-#include <fstream>
 #include <random>
 #include <climits>
 
@@ -54,9 +53,6 @@ class yfs_client {
             unsigned int len_inum = n2i(buf.substr(start, cur - start));
             start = ++cur;
 
-        std::ofstream outf("debug.txt", std::ofstream::app);
-        outf << "rrr start:" << start << " len_name:" << len_name << " len_inum:" << len_inum << " begin:" << buf[start] << "," << buf[start + len_name] << std::endl;
-        outf.close();
             data[buf.substr(start, len_name)] = n2i(buf.substr(start + len_name, len_inum));
             cur = start + len_name + len_inum;
         }

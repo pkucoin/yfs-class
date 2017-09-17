@@ -3,7 +3,6 @@
 #include "extent_client.h"
 #include <sstream>
 #include <iostream>
-#include <fstream>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -116,9 +115,6 @@ yfs_client::create(inum dir, const char *name, inum &ret_id)
         }
 		ret_id = rand_inum();
 		dl.add(ret_id, name);
-        std::ofstream outf("debug.txt", std::ofstream::app);
-        outf << "created dir:" << dir << " content:" << dl.to_string() << std::endl;
-        outf.close();
         ret = ec->put(ret_id, "");
         if (ret != OK) return ret;
         return ec->put(dir, dl.to_string());
@@ -144,9 +140,6 @@ yfs_client::lookup(inum dir, const char *name, inum &ret_id)
             return NOENT;
         }
         ret_id = dl.get(name);
-        std::ofstream outf("debug.txt", std::ofstream::app);
-        outf << "lookup dir" << dir << " name:" << name << " return:" << ret_id << std::endl;
-        outf.close();
         return OK;
     }
     
@@ -166,9 +159,6 @@ yfs_client::readdir(inum dir, std::unordered_map<std::string, inum>& ret_map)
         }
 		dirent_list dl(buf);
         ret_map = dl.get_map();
-        std::ofstream outf("debug.txt", std::ofstream::app);
-        outf << "readdir dir:" << dir << " return:" << dl.to_string() << std::endl;
-        outf.close();
         return OK;
     }
     

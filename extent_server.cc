@@ -2,7 +2,6 @@
 
 #include "extent_server.h"
 #include <sstream>
-#include <fstream>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -28,9 +27,6 @@ int extent_server::put(extent_protocol::extentid_t id, std::string buf, int &)
   }
   data[id].buf = std::move(buf);
   data[id].attr.mtime = data[id].attr.ctime = now;
-  std::ofstream outf("debug.txt", std::ofstream::app);
-  outf << "put: id:" << id << "buf:" << buf << std::endl;
-  outf.close();
   return extent_protocol::OK;
 }
 
@@ -44,9 +40,6 @@ int extent_server::get(extent_protocol::extentid_t id, std::string &buf)
     }
     buf = data[id].buf;
     data[id].attr.atime = std::time(nullptr);
-  std::ofstream outf("debug.txt", std::ofstream::app);
-  outf << "get: id:" << id << "buf:" << buf << std::endl;
-  outf.close();
     return extent_protocol::OK;
 
 }
@@ -65,9 +58,6 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
     a.atime = data[id].attr.atime;
     a.mtime = data[id].attr.mtime;
     a.ctime = data[id].attr.ctime;
-  std::ofstream outf("debug.txt", std::ofstream::app);
-  outf << "getattr: id:" << id << std::endl;
-  outf.close();
     return extent_protocol::OK;
 }
 
@@ -80,9 +70,6 @@ int extent_server::remove(extent_protocol::extentid_t id, int &)
         return extent_protocol::NOENT;
     }
     data.erase(id);
-  std::ofstream outf("debug.txt", std::ofstream::app);
-  outf << "remove: id:" << id << std::endl;
-  outf.close();
     return extent_protocol::OK;
 }
 
