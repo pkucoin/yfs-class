@@ -164,3 +164,58 @@ yfs_client::readdir(inum dir, std::unordered_map<std::string, inum>& ret_map)
     
     return IOERR;
 }
+
+yfs_client::status
+yfs_client::setattr(inum ino, unsigned int len)
+{
+    if (!isfile(ino)) return NOENT;
+    std::string buf;
+    auto ret = ec->get(ino, buf);
+    if (ret != OK) return ret;
+    if (buf.size() > len)
+    {
+        buf = std::move(buf.substr(0, len));
+    }
+    else
+    {
+        buf.append(std::string(len - buf.size(), '\0'));
+    }
+    return ec->put(ino, buf);
+}
+
+yfs_client::status
+yfs_client::read(inum ino, std::size_t off, std::size_t len, std::string& data)
+{ 
+    if (!isfile(ino)) return NOENT;
+    std::string buf;
+    auto ret = ec->get(ino, buf);
+    if (ret != OK) return ret;
+    if (off < buf.size())
+    {
+        if (off + len <= buf.size())
+        {
+            data = std::move(buf.substr(off, len));
+        }
+        else
+        {
+            data = std::move(buf.substr(off, buf.size() - off));
+        }
+    }
+    return OK;
+}
+
+yfs_client::status
+yfs_client::write(inum ino, std::size_t off, std::size_t len, const char *data)
+{
+    if (!isfile(ino)) return NOENT;
+    std::string buf;
+    auto ret = ec->get(ino, buf);
+    if (ret != OK) return ret;
+    buf.resize(std::max(buf.size(), off + len), '\0');
+    std::size_t total_len = strlen(data);
+    for (unsigned int i = off, j = 0; j < std::min(total_len, len); i++, j++)
+    {
+        buf[i] = data[j];
+    }
+    return ec->put(ino, buf);
+}

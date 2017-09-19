@@ -120,6 +120,9 @@ class yfs_client {
   yfs_client::status create(inum parent, const char *name, inum &ret_id); 
   yfs_client::status lookup(inum parent, const char *name, inum &ret_id); 
   yfs_client::status readdir(inum parent, std::unordered_map<std::string, inum>& ret_map); 
+  yfs_client::status setattr(inum ino, unsigned int len); 
+  yfs_client::status read(inum ino, std::size_t off, std::size_t len, std::string& data); 
+  yfs_client::status write(inum ino, std::size_t off, std::size_t len, const char *data);
 };
 
 #endif 
