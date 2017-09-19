@@ -234,7 +234,7 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   e->generation = 0;
   // You fill this in for Lab 2
   yfs_client::inum id;
-  auto ret = yfs->create(parent, name, id);
+  auto ret = yfs->create(parent, name, false, id);
   if (ret == yfs_client::OK)
   {
     e->ino = id;
@@ -408,11 +408,22 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
   (void) e;
 
   // You fill this in for Lab 3
-#if 0
-  fuse_reply_entry(req, &e);
-#else
-  fuse_reply_err(req, ENOSYS);
-#endif
+  yfs_client::inum ret_id;
+  auto ret = yfs->create(parent, name, true, ret_id);
+  if (ret == yfs_client::OK)
+  {
+    e.ino = ret_id;
+    getattr(e.ino, e.attr);
+    fuse_reply_entry(req, &e);
+  }
+  else if (ret == yfs_client::EXIST)
+  {
+    fuse_reply_err(req, EEXIST);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOENT);
+  }
 }
 
 //
@@ -429,7 +440,19 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // You fill this in for Lab 3
   // Success:	fuse_reply_err(req, 0);
   // Not found:	fuse_reply_err(req, ENOENT);
-  fuse_reply_err(req, ENOSYS);
+  auto ret = yfs->unlink(parent, name);
+  if (ret == yfs_client::OK)
+  {
+    fuse_reply_err(req, 0);
+  }
+  else if (ret == yfs_client::NOENT)
+  {
+    fuse_reply_err(req, ENOENT);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOSYS);
+  }
 }
 
 void

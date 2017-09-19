@@ -37,9 +37,12 @@ yfs_client::filename(inum inum)
 }
 
 yfs_client::inum
-yfs_client::rand_inum()
+yfs_client::rand_inum(bool is_dir)
 {
-	return uid(generator) | 0x80000000;
+    if (is_dir)
+        return uid(generator) & 0x7FFFFFFF;
+    else
+	    return uid(generator) | 0x80000000;
 }
 
 bool
@@ -103,7 +106,7 @@ yfs_client::getdir(inum inum, dirinfo &din)
 }
 
 yfs_client::status
-yfs_client::create(inum dir, const char *name, inum &ret_id)
+yfs_client::create(inum dir, const char *name, bool is_dir, inum &ret_id)
 {
     if (isdir(dir))
     {
@@ -118,7 +121,7 @@ yfs_client::create(inum dir, const char *name, inum &ret_id)
         {
             return EXIST;
         }
-		ret_id = rand_inum();
+		ret_id = rand_inum(is_dir);
 		dl.add(ret_id, name);
         ret = ec->put(ret_id, "");
         if (ret != OK) return ret;
@@ -223,4 +226,20 @@ yfs_client::write(inum ino, std::size_t off, std::size_t len, const char *data)
         buf[i] = data[j];
     }
     return ec->put(ino, buf);
+}
+
+yfs_client::status
+yfs_client::unlink(inum parent, const char *name)
+{
+    if (!isdir(parent)) return NOENT;
+    std::string buf;
+    auto ret = ec->get(parent, buf);
+    if (ret != OK) return ret;
+    dirent_list dl(buf);
+    if (!dl.match(name)) return NOENT;
+    auto file_inum = dl.get(name);
+    ret = ec->remove(file_inum);
+    if (ret != OK) return ret;
+    dl.remove(name);
+    return ec->put(parent, dl.to_string());
 }
