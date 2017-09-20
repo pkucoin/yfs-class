@@ -79,6 +79,11 @@ class yfs_client {
     {
         data[name] = id;
     }
+
+    void remove(const char *name)
+    {
+        data.erase(name);
+    }
     
     std::unordered_map<std::string, inum> get_map()
     {
@@ -107,7 +112,7 @@ class yfs_client {
  private:
   static std::string filename(inum);
   static inum n2i(std::string);
-  inum rand_inum();
+  inum rand_inum(bool);
   std::mt19937 generator;
   std::uniform_int_distribution<int> uid;
  public:
@@ -120,12 +125,13 @@ class yfs_client {
   int getfile(inum, fileinfo &);
   int getdir(inum, dirinfo &);
 
-  yfs_client::status create(inum parent, const char *name, inum &ret_id); 
+  yfs_client::status create(inum parent, const char *name, bool isdir, inum &ret_id); 
   yfs_client::status lookup(inum parent, const char *name, inum &ret_id); 
   yfs_client::status readdir(inum parent, std::unordered_map<std::string, inum>& ret_map); 
   yfs_client::status setattr(inum ino, unsigned int len); 
   yfs_client::status read(inum ino, std::size_t off, std::size_t len, std::string& data); 
   yfs_client::status write(inum ino, std::size_t off, std::size_t len, const char *data);
+  yfs_client::status unlink(inum parent, const char *name); 
 };
 
 #endif 
