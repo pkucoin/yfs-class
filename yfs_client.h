@@ -13,6 +13,7 @@
 
 class yfs_client {
   extent_client *ec;
+  lock_client *lc;
  public:
 
   typedef unsigned long long inum;
@@ -134,4 +135,19 @@ class yfs_client {
   yfs_client::status unlink(inum parent, const char *name); 
 };
 
+class raii_wrapper
+{
+    private:
+        lock_client *lc;
+        yfs_client::inum ino;
+    public:
+        raii_wrapper(lock_client *lc_, yfs_client::inum ino_) : lc(lc_), ino(ino_)
+        {
+            lc->acquire(ino);
+        }
+        ~raii_wrapper() 
+        {
+            lc->release(ino);
+        }
+};
 #endif 

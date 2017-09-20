@@ -15,6 +15,7 @@
 yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
   ec = new extent_client(extent_dst);
+  lc = new lock_client(lock_dst);
   generator = std::mt19937(std::random_device()());
   uid = std::uniform_int_distribution<int>(0, int((long long)(1 << 31) - 1));
 }
@@ -66,6 +67,7 @@ yfs_client::getfile(inum inum, fileinfo &fin)
   // You modify this function for Lab 3
   // - hold and release the file lock
 
+  raii_wrapper rw(lc, inum);
   printf("getfile %016llx\n", inum);
   extent_protocol::attr a;
   if (ec->getattr(inum, a) != extent_protocol::OK) {
@@ -91,6 +93,7 @@ yfs_client::getdir(inum inum, dirinfo &din)
   // You modify this function for Lab 3
   // - hold and release the directory lock
 
+  raii_wrapper rw(lc, inum);
   printf("getdir %016llx\n", inum);
   extent_protocol::attr a;
   if (ec->getattr(inum, a) != extent_protocol::OK) {
@@ -110,6 +113,7 @@ yfs_client::create(inum dir, const char *name, bool is_dir, inum &ret_id)
 {
     if (isdir(dir))
     {
+        raii_wrapper rw(lc, dir);
         std::string buf;
         auto ret = ec->get(dir, buf);
         if (ret != OK)
@@ -123,6 +127,7 @@ yfs_client::create(inum dir, const char *name, bool is_dir, inum &ret_id)
         }
 		ret_id = rand_inum(is_dir);
 		dl.add(ret_id, name);
+        raii_wrapper rw2(lc, ret_id);
         ret = ec->put(ret_id, "");
         if (ret != OK) return ret;
         return ec->put(dir, dl.to_string());
@@ -136,6 +141,7 @@ yfs_client::lookup(inum dir, const char *name, inum &ret_id)
 {
     if (isdir(dir))
     {
+        raii_wrapper rw(lc, dir);
         std::string buf;
         auto ret = ec->get(dir, buf);
         if (ret != OK)
@@ -159,6 +165,7 @@ yfs_client::readdir(inum dir, std::unordered_map<std::string, inum>& ret_map)
 {
     if (isdir(dir))
     {
+        raii_wrapper rw(lc, dir);
         std::string buf;
         auto ret = ec->get(dir, buf);
         if (ret != OK)
@@ -177,6 +184,7 @@ yfs_client::status
 yfs_client::setattr(inum ino, unsigned int len)
 {
     if (!isfile(ino)) return NOENT;
+    raii_wrapper rw(lc, ino);
     std::string buf;
     auto ret = ec->get(ino, buf);
     if (ret != OK) return ret;
@@ -195,6 +203,7 @@ yfs_client::status
 yfs_client::read(inum ino, std::size_t off, std::size_t len, std::string& data)
 { 
     if (!isfile(ino)) return NOENT;
+    raii_wrapper rw(lc, ino);
     std::string buf;
     auto ret = ec->get(ino, buf);
     if (ret != OK) return ret;
@@ -216,6 +225,7 @@ yfs_client::status
 yfs_client::write(inum ino, std::size_t off, std::size_t len, const char *data)
 {
     if (!isfile(ino)) return NOENT;
+    raii_wrapper rw(lc, ino);
     std::string buf;
     auto ret = ec->get(ino, buf);
     if (ret != OK) return ret;
@@ -232,12 +242,14 @@ yfs_client::status
 yfs_client::unlink(inum parent, const char *name)
 {
     if (!isdir(parent)) return NOENT;
+    raii_wrapper rw(lc, parent);
     std::string buf;
     auto ret = ec->get(parent, buf);
     if (ret != OK) return ret;
     dirent_list dl(buf);
     if (!dl.match(name)) return NOENT;
     auto file_inum = dl.get(name);
+    raii_wrapper rw2(lc, file_inum);
     ret = ec->remove(file_inum);
     if (ret != OK) return ret;
     dl.remove(name);
