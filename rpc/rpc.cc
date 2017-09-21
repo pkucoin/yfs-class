@@ -556,6 +556,7 @@ rpcs::dispatch(djob_t *j)
 			// if we don't know about this clt_nonce, create a cleanup object
 			if(reply_window_.find(h.clt_nonce) == reply_window_.end()){
 				VERIFY (reply_window_[h.clt_nonce].size() == 0); // create
+                //reply_window_[h.clt_nonce].push_back(reply_t(0));
 				jsl_log(JSL_DBG_2,
 						"rpcs::dispatch: new client %u xid %d chan %d, total clients %d\n", 
 						h.clt_nonce, h.xid, c->channo(), (int)reply_window_.size());
@@ -663,6 +664,65 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 	ScopedLock rwl(&reply_window_m_);
 
         // You fill this in for Lab 1.
+	VERIFY(xid > xid_rep);
+	std::list<reply_t>& reply_list = reply_window_[clt_nonce];
+	std::cout << "check begin. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+	std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
+	for (auto& reply : reply_list)
+	{
+		std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
+	}
+	
+	auto itr = reply_list.begin();
+	if (!reply_list.empty())
+	{
+		while (itr->xid < xid_rep)
+		{
+			if (itr->buf)
+			{
+				free(itr->buf);
+			}
+			itr = reply_list.erase(itr);
+		}
+		if (!reply_list.empty())
+		{
+			if (itr->xid > xid)
+			{
+				std::cout << "check ends FORGOTTEN. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+				return FORGOTTEN;
+			}
+			for ( ; itr != reply_list.end(); ++itr)
+			{
+				if (itr->xid == xid)
+				{
+					if (itr->cb_present)
+					{
+						*b = itr->buf;
+						*sz = itr->sz;
+						std::cout << "check ends DONE. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+						return DONE;
+					}
+					else
+					{
+						std::cout << "check ends INPROGRESS. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+						return INPROGRESS;
+					}
+				}
+				else if (itr->xid > xid)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	reply_list.insert(itr, reply_t(xid));
+	std::cout << "check ends NEW. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+	std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
+	for (auto& reply : reply_list)
+	{
+		std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
+	}
 	return NEW;
 }
 
@@ -677,6 +737,24 @@ rpcs::add_reply(unsigned int clt_nonce, unsigned int xid,
 {
 	ScopedLock rwl(&reply_window_m_);
         // You fill this in for Lab 1.
+	std::list<reply_t>& reply_list = reply_window_[clt_nonce];
+	for (auto itr = reply_list.begin(); itr != reply_list.end(); ++itr)
+	{
+		if (itr->xid == xid)
+		{
+			itr->buf = b;
+			itr->sz = sz;
+			itr->cb_present = true;
+			break;
+		}
+	}
+	
+	std::cout << "add_reply done. clt_nonce:" << clt_nonce << " xid:" << xid << std::endl;
+	std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
+	for (auto& reply : reply_list)
+	{
+		std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
+	}
 }
 
 void
