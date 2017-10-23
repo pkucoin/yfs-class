@@ -108,7 +108,8 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     map_lock.unlock();
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
     std::ofstream outf("debug.dat", std::ios::app);
-    outf << "release: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
+    outf << "release: id:" << id << " lid:" << lid << " status:" << cur_lock->status 
+        << " revoke:" << cur_lock->num_revoke << std::endl;
     outf.close();
     if (cur_lock->status != client_lock::LOCKED)
     {
@@ -128,6 +129,10 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
         }
         else
         {
+            outf.open("debug.dat", std::ios::app);
+            outf << "release2: id:" << id << " lid:" << lid << " status:" 
+                << cur_lock->status << " ret:" << ret << std::endl;
+            outf.close();
             return ret;
         }
     }
@@ -136,6 +141,9 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
         cur_lock->status = client_lock::FREE;
     }
 
+    outf.open("debug.dat", std::ios::app);
+    outf << "release3: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
+    outf.close();
     cur_lock->available_cv.notify_all();
     return lock_protocol::OK;
 }
@@ -197,11 +205,16 @@ lock_client_cache::retry_handler(lock_protocol::lockid_t lid,
         return ret;
     }
 
+    auto cur_lock = itr->second;
+    std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
+    map_lock.unlock();
+
     std::ofstream outf("debug.dat", std::ios::app);
-    outf << "retry: id:" << id << " lid:" << lid << " status:" << itr->second->status << std::endl;
+    outf << "retry: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
     outf.close();
-    itr->second->num_retry++;
-    itr->second->retry_cv.notify_one();
+    
+    cur_lock->num_retry++;
+    cur_lock->retry_cv.notify_one();
     return ret;
 }
 

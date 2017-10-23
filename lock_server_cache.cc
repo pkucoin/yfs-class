@@ -68,6 +68,7 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
             cur_lock->waiting_cids.push(id);
             single_lock.unlock();
             cl->call(rlock_protocol::revoke, lid, r);
+            single_lock.lock();
             /* it seems this is overthinking
             while (ret != lock_protocol::OK)
             {
@@ -130,7 +131,9 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
         if (cl)
         {
             int r;
+            single_lock.unlock();
             auto ret = cl->call(rlock_protocol::retry, lid, r);
+            single_lock.lock();
             if (ret != lock_protocol::OK)
             {
                 return ret;
