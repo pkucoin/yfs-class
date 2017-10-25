@@ -82,7 +82,16 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
                 // RETRY doesn't mean we should try again and again immediately
                 // instead we wait for a explicit notification
                 // i.e. a retry rpc
-                cur_lock->retry_cv.wait(single_lock, [&](){ return cur_lock->num_retry;}); 
+                // pay attention that retry rpc may arrive before we got this RETRY ret
+                if (cur_lock->num_retry)
+                {
+                    cur_lock->num_retry = 0;
+                    continue;
+                }
+                while (cur_lock->num_retry == 0)
+                {
+                    cur_lock->retry_cv.wait(single_lock);
+                }
                 cur_lock->num_retry = 0;
             }
             else
@@ -117,7 +126,7 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     }
     if (cur_lock->num_revoke)
     {
-        cur_lock->num_revoke--; 
+        cur_lock->num_revoke = 0; 
         cur_lock->status = client_lock::RELEASING;
         int r;
         single_lock.unlock();
@@ -126,25 +135,26 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
         if (ret == lock_protocol::OK)
         {
             cur_lock->status = client_lock::NONE;
+            outf.open("debug.dat", std::ios::app);
+            outf << "release3: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
+            outf.close();
+            cur_lock->available_cv.notify_all();
         }
         else
         {
-            outf.open("debug.dat", std::ios::app);
-            outf << "release2: id:" << id << " lid:" << lid << " status:" 
-                << cur_lock->status << " ret:" << ret << std::endl;
-            outf.close();
             return ret;
         }
     }
     else
     {
         cur_lock->status = client_lock::FREE;
+        outf.open("debug.dat", std::ios::app);
+        outf << "release2: id:" << id << " lid:" << lid << " status:" 
+            << cur_lock->status <<  std::endl;
+        outf.close();
+        cur_lock->available_cv.notify_one();
     }
 
-    outf.open("debug.dat", std::ios::app);
-    outf << "release3: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
-    outf.close();
-    cur_lock->available_cv.notify_all();
     return lock_protocol::OK;
 }
 

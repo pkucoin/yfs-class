@@ -666,12 +666,12 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
         // You fill this in for Lab 1.
 	VERIFY(xid > xid_rep);
 	std::list<reply_t>& reply_list = reply_window_[clt_nonce];
-	std::cout << "check begin. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
-	std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
-	for (auto& reply : reply_list)
-	{
-		std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
-	}
+	//std::cout << "check begin. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+	//std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
+	//for (auto& reply : reply_list)
+	//{
+	//	std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
+	//}
 	
 	auto itr = reply_list.begin();
 	if (!reply_list.empty())
@@ -688,7 +688,7 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 		{
 			if (itr->xid > xid)
 			{
-				std::cout << "check ends FORGOTTEN. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+				//std::cout << "check ends FORGOTTEN. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
 				return FORGOTTEN;
 			}
 			for ( ; itr != reply_list.end(); ++itr)
@@ -699,12 +699,12 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 					{
 						*b = itr->buf;
 						*sz = itr->sz;
-						std::cout << "check ends DONE. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+						//std::cout << "check ends DONE. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
 						return DONE;
 					}
 					else
 					{
-						std::cout << "check ends INPROGRESS. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+						//std::cout << "check ends INPROGRESS. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
 						return INPROGRESS;
 					}
 				}
@@ -717,12 +717,12 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 	}
 
 	reply_list.insert(itr, reply_t(xid));
-	std::cout << "check ends NEW. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
-	std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
-	for (auto& reply : reply_list)
-	{
-		std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
-	}
+	//std::cout << "check ends NEW. clt_nonce:" << clt_nonce << " xid:" << xid << " xid_rep:" << xid_rep << std::endl;
+	//std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
+	//for (auto& reply : reply_list)
+	//{
+	//	std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
+	//}
 	return NEW;
 }
 
@@ -749,12 +749,12 @@ rpcs::add_reply(unsigned int clt_nonce, unsigned int xid,
 		}
 	}
 	
-	std::cout << "add_reply done. clt_nonce:" << clt_nonce << " xid:" << xid << std::endl;
-	std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
-	for (auto& reply : reply_list)
-	{
-		std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
-	}
+	//std::cout << "add_reply done. clt_nonce:" << clt_nonce << " xid:" << xid << std::endl;
+	//std::cout << "current reply_list: size:" << reply_list.size() << std::endl;
+	//for (auto& reply : reply_list)
+	//{
+	//	std::cout << "  xid:" << reply.xid << " cb_present:" << reply.cb_present << std::endl;
+	//}
 }
 
 void
