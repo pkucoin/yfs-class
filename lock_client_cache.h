@@ -37,7 +37,7 @@ class lock_client_cache : public lock_client {
             int status = NONE;
             std::mutex mtx;
             std::condition_variable available_cv;
-            std::condition_variable revoke_cv;
+            std::condition_variable release_cv;
             std::condition_variable retry_cv;
             int num_revoke = 0; 
             int num_retry = 0;  

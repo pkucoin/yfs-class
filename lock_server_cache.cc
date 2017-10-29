@@ -35,9 +35,6 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
     }
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
     map_lock.unlock();
-    std::ofstream outf("debug.dat", std::ios::app);
-    outf << "server acquire: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
-    outf.close();
     if (cur_lock->status == server_lock::FREE)
     {
         cur_lock->status = server_lock::LOCKED;
@@ -112,11 +109,6 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
     auto cur_lock = itr->second;
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
     map_lock.unlock();
-    std::ofstream outf("debug.dat", std::ios::app);
-    outf << "server release: id:" << id << " lid:" << lid 
-        << " status:" << cur_lock->status << " owner: " << cur_lock->client_id 
-        << " waiting: " << cur_lock->waiting_cids.empty() << std::endl;
-    outf.close();
     if (cur_lock->client_id != id || cur_lock->status == server_lock::FREE)
     {
         return ret;

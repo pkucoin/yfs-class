@@ -40,19 +40,23 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
         cur_lock = itr->second;
     }
     
-    std::ofstream outf("debug.dat", std::ios::app);
-    outf << "acquire: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
-    outf.close();
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx); 
     // we will never erase a kv in lock_cache in this program
     // so cur_lock will always be valid (insert or erase other kv won't invalidate cur_lock)
     // so we no longer need exclusive access to lock_cache
     map_lock.unlock(); 
-    while (cur_lock->status != client_lock::NONE 
-            && cur_lock->status != client_lock::FREE)
+    //while (cur_lock->status != client_lock::NONE 
+    //        && cur_lock->status != client_lock::FREE)
+    while (cur_lock->status == client_lock::LOCKED 
+            || cur_lock->status == client_lock::ACQUIRING)
     {
         // wait until cur_lock->status is (possibly) available, i.e. NONE or FREE
         cur_lock->available_cv.wait(single_lock);
+    }
+    while (cur_lock->status == client_lock::RELEASING)
+    {
+        // wait while release
+        cur_lock->release_cv.wait(single_lock);
     }
     if (cur_lock->status == client_lock::FREE)
     {
@@ -116,10 +120,6 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     auto cur_lock = itr->second;
     map_lock.unlock();
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
-    std::ofstream outf("debug.dat", std::ios::app);
-    outf << "release: id:" << id << " lid:" << lid << " status:" << cur_lock->status 
-        << " revoke:" << cur_lock->num_revoke << std::endl;
-    outf.close();
     if (cur_lock->status != client_lock::LOCKED)
     {
         return lock_protocol::IOERR;
@@ -135,10 +135,8 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
         if (ret == lock_protocol::OK)
         {
             cur_lock->status = client_lock::NONE;
-            outf.open("debug.dat", std::ios::app);
-            outf << "release3: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
-            outf.close();
             cur_lock->available_cv.notify_all();
+            cur_lock->release_cv.notify_all();
         }
         else
         {
@@ -148,10 +146,6 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     else
     {
         cur_lock->status = client_lock::FREE;
-        outf.open("debug.dat", std::ios::app);
-        outf << "release2: id:" << id << " lid:" << lid << " status:" 
-            << cur_lock->status <<  std::endl;
-        outf.close();
         cur_lock->available_cv.notify_one();
     }
 
@@ -173,9 +167,6 @@ lock_client_cache::revoke_handler(lock_protocol::lockid_t lid,
     auto cur_lock = itr->second;
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
     map_lock.unlock();
-    std::ofstream outf("debug.dat", std::ios::app);
-    outf << "revoke: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
-    outf.close();
     if (cur_lock->status == client_lock::FREE)
     {
         // the lock is free, so give it back
@@ -187,6 +178,8 @@ lock_client_cache::revoke_handler(lock_protocol::lockid_t lid,
         if (ret == lock_protocol::OK)
         {
             cur_lock->status = client_lock::NONE;
+            cur_lock->available_cv.notify_all();
+            cur_lock->release_cv.notify_all();
         }
         else
         {
@@ -219,10 +212,6 @@ lock_client_cache::retry_handler(lock_protocol::lockid_t lid,
     std::unique_lock<std::mutex> single_lock(cur_lock->mtx);
     map_lock.unlock();
 
-    std::ofstream outf("debug.dat", std::ios::app);
-    outf << "retry: id:" << id << " lid:" << lid << " status:" << cur_lock->status << std::endl;
-    outf.close();
-    
     cur_lock->num_retry++;
     cur_lock->retry_cv.notify_one();
     return ret;
