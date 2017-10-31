@@ -1,0 +1,17 @@
+*.[oad]
+lock_demo
+lock_server
+lock_tester
+rpctest
+tags
+cscope.out
+cscope.po.out
+cscope.in.out
+extent_server
+yfs_client
+debug.txt
+yfs1/
+yfs2/
+*.log
+test-lab-3-b
+test-lab-3-c
