@@ -10,10 +10,24 @@
 #include "lock_client.h"
 #include <random>
 #include <climits>
+#include "lock_client_cache.h"
+
+class lock_release_extent : public lock_release_user {
+    private:
+        extent_client *ec;
+    public:
+        lock_release_extent(extent_client *_ec) : ec(_ec) {}
+        void dorelease(lock_protocol::lockid_t lid)
+        {
+            ec->flush(lid);
+        }
+
+};
 
 class yfs_client {
   extent_client *ec;
   lock_client *lc;
+  lock_release_user *lu;
  public:
 
   typedef unsigned long long inum;

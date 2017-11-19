@@ -19,6 +19,8 @@ class lock_release_user {
         virtual ~lock_release_user() {};
 };
 
+
+
 class lock_client_cache : public lock_client {
     private:
         class lock_release_user *lu;

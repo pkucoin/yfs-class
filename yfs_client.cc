@@ -17,7 +17,8 @@ yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
   ec = new extent_client(extent_dst);
   //lc = new lock_client(lock_dst);
-  lc = new lock_client_cache(lock_dst);
+  lu = new lock_release_extent(ec);
+  lc = new lock_client_cache(lock_dst, lu);
   generator = std::mt19937(std::random_device()());
   uid = std::uniform_int_distribution<int>(0, int((long long)(1 << 31) - 1));
 }
@@ -132,7 +133,11 @@ yfs_client::create(inum dir, const char *name, bool is_dir, inum &ret_id)
         raii_wrapper rw2(lc, ret_id);
         ret = ec->put(ret_id, "");
         if (ret != OK) return ret;
+        //ret = ec->flush(ret_id);
+        //if (ret != OK) return ret;
         return ec->put(dir, dl.to_string());
+        //if (ret != OK) return ret;
+        //return ec->flush(dir);
     }
 
     return NOENT;

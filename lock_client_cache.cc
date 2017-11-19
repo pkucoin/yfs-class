@@ -126,6 +126,7 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     }
     if (cur_lock->num_revoke)
     {
+        lu->dorelease(lid);
         cur_lock->num_revoke = 0; 
         cur_lock->status = client_lock::RELEASING;
         int r;
@@ -170,6 +171,7 @@ lock_client_cache::revoke_handler(lock_protocol::lockid_t lid,
     if (cur_lock->status == client_lock::FREE)
     {
         // the lock is free, so give it back
+        lu->dorelease(lid);
         cur_lock->status = client_lock::RELEASING;
         int r;
         single_lock.unlock();
