@@ -126,13 +126,18 @@ fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     printf("   fuseserver_setattr set size to %zu\n", attr->st_size);
     struct stat st;
     // You fill this in for Lab 2
-#if 0
     // Change the above line to "#if 1", and your code goes here
     // Note: fill st using getattr before fuse_reply_attr
-    fuse_reply_attr(req, &st, 0);
-#else
-    fuse_reply_err(req, ENOSYS);
-#endif
+    auto ret = yfs->setattr(ino, attr->st_size);
+    if (ret == yfs_client::OK)
+    {
+        getattr(ino, st);
+        fuse_reply_attr(req, &st, 0);
+    }
+    else
+    {
+        fuse_reply_err(req, ENOSYS);
+    }
   } else {
     fuse_reply_err(req, ENOSYS);
   }
@@ -155,13 +160,17 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
                 off_t off, struct fuse_file_info *fi)
 {
   // You fill this in for Lab 2
-#if 0
   std::string buf;
   // Change the above "#if 0" to "#if 1", and your code goes here
-  fuse_reply_buf(req, buf.data(), buf.size());
-#else
-  fuse_reply_err(req, ENOSYS);
-#endif
+  auto ret = yfs->read(ino, off, size, buf);
+  if (ret == yfs_client::OK)
+  {
+    fuse_reply_buf(req, buf.data(), buf.size());
+  }
+  else
+  {
+    fuse_reply_err(req, ENOSYS);
+  }
 }
 
 //
@@ -185,12 +194,16 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
                  struct fuse_file_info *fi)
 {
   // You fill this in for Lab 2
-#if 0
   // Change the above line to "#if 1", and your code goes here
-  fuse_reply_write(req, size);
-#else
-  fuse_reply_err(req, ENOSYS);
-#endif
+  auto ret = yfs->write(ino, off, size, buf);
+  if (ret == yfs_client::OK)
+  {
+    fuse_reply_write(req, size);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOSYS);
+  }
 }
 
 //
@@ -220,7 +233,17 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   e->entry_timeout = 0.0;
   e->generation = 0;
   // You fill this in for Lab 2
-  return yfs_client::NOENT;
+  yfs_client::inum id;
+  auto ret = yfs->create(parent, name, false, id);
+  if (ret == yfs_client::OK)
+  {
+    e->ino = id;
+    return getattr(e->ino, e->attr);
+  }
+  else
+  {
+    return yfs_client::NOENT;
+  }
 }
 
 void
@@ -268,11 +291,15 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   e.attr_timeout = 0.0;
   e.entry_timeout = 0.0;
   e.generation = 0;
-  bool found = false;
-
   // You fill this in for Lab 2
-  if (found)
+  yfs_client::inum ino;
+  auto ret = yfs->lookup(parent, name, ino);
+  if (ret == yfs_client::OK)
+  {
+    e.ino = ino;
+    getattr(ino, e.attr);
     fuse_reply_entry(req, &e);
+  }
   else
     fuse_reply_err(req, ENOENT);
 }
@@ -332,10 +359,22 @@ fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 
 
   // You fill this in for Lab 2
-
-
-  reply_buf_limited(req, b.p, b.size, off, size);
-  free(b.p);
+  std::unordered_map<std::string, yfs_client::inum> dir_map;
+  auto ret = yfs->readdir(inum, dir_map);
+  if (ret == yfs_client::OK)
+  {
+    for (auto const& kv : dir_map)
+    {
+        dirbuf_add(&b, kv.first.c_str(), kv.second);
+    }
+    reply_buf_limited(req, b.p, b.size, off, size);
+    free(b.p);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOTDIR);
+    return; 
+  }
 }
 
 
@@ -369,11 +408,22 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
   (void) e;
 
   // You fill this in for Lab 3
-#if 0
-  fuse_reply_entry(req, &e);
-#else
-  fuse_reply_err(req, ENOSYS);
-#endif
+  yfs_client::inum ret_id;
+  auto ret = yfs->create(parent, name, true, ret_id);
+  if (ret == yfs_client::OK)
+  {
+    e.ino = ret_id;
+    getattr(e.ino, e.attr);
+    fuse_reply_entry(req, &e);
+  }
+  else if (ret == yfs_client::EXIST)
+  {
+    fuse_reply_err(req, EEXIST);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOENT);
+  }
 }
 
 //
@@ -390,7 +440,19 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // You fill this in for Lab 3
   // Success:	fuse_reply_err(req, 0);
   // Not found:	fuse_reply_err(req, ENOENT);
-  fuse_reply_err(req, ENOSYS);
+  auto ret = yfs->unlink(parent, name);
+  if (ret == yfs_client::OK)
+  {
+    fuse_reply_err(req, 0);
+  }
+  else if (ret == yfs_client::NOENT)
+  {
+    fuse_reply_err(req, ENOENT);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOSYS);
+  }
 }
 
 void
