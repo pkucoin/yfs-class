@@ -11,4 +11,7 @@
 上图是本lab实现的名为YFS的分布式文件系统的结构图。YFS利用Linux FUSE接口在不修改内核代码的前提下创建了一个文件系统，接管了基础文件操作例如create, mkdir, lookup, read/write等。YFS客户端将这些操作转发到存储服务器extent_server进行实际的读写查询，期间使用锁服务器来保证内容的一致性。客户端和服务器均使用了缓存机制来提高运行效率。锁服务器使用了基于Paxos的复制状态机技术进行了复制来应对宕机。 
 
 
-## Lab1: 锁服务器、RPC语义及C++锁初步
+## Lab1: 锁服务、RPC语义及相关C++知识
+Lab1给出了一个rpc基础库和locking service的C/S端的基础框架，需要实现的是rpc的at most once语义（不要求考虑重启宕机）以及locking service的服务器端代码。完成后，locking service的C/S端之间使用rpc进行通信，完成锁的获取acquire和释放release。
+
+
