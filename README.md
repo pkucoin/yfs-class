@@ -12,6 +12,16 @@
 
 
 ## Lab1: 锁服务、RPC语义及相关C++知识
+### 目标
 Lab1给出了一个rpc基础库和locking service的C/S端的基础框架，需要实现的是rpc的at most once语义（不要求考虑重启宕机）以及locking service的服务器端代码。完成后，locking service的C/S端之间使用rpc进行通信，完成锁的获取acquire和释放release。
+### RPC基础库
+lab中提供的rpc基础库可谓麻雀虽小五脏俱全，实现上也颇有技巧，值得一读（虽然不太清楚lab中提供的rpc是完全为此lab编写还是来自开源项目）。其中各部分的主要内容如下：
+- connection 封装了socket通信的相关操作
+- fifo 实现了一个blocking queue供PollMgr使用
+- jsl_log 日志模块
+- marshall 编解码
+- 
+
+
 
 
